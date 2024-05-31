@@ -10,7 +10,7 @@
 
 typedef struct s_args {
     const char *jsdoc_src_path;
-    const char *intermediate_path;
+    const char *types_folder;
 } args_t;
 
 int arg_parser(args_t *self, int argc, const char *argv[]);

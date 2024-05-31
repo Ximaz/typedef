@@ -14,7 +14,7 @@ static void usage(const char *program)
 {
     printf(
         "USAGE :\n"
-        "    %s <jsdoc_source> <intermediate_output>\n", program
+        "    %s <jsdoc_src_path.js> <types_folder>\n", program
     );
 }
 
