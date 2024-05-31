@@ -6,7 +6,7 @@
 */
 
 #include <stdio.h>
-#include "typedef/arg_parser.h"
+#include "args_parser.h"
 
 #ifndef UNIT_TESTS
 
@@ -22,7 +22,7 @@ int main(int argc, const char *argv[])
 {
     args_t args = { 0 };
 
-    if (-1 == arg_parser(&args, argc, argv)) {
+    if (-1 == args_parser(&args, argc, argv)) {
         usage(*argv);
         return 0;
     }

@@ -7,10 +7,10 @@
 
 #include <stddef.h>
 #include <unistd.h>
-#include "typedef/arg_parser.h"
-#include "typedef/path.h"
+#include "args_parser.h"
+#include "path.h"
 
-int arg_parser(args_t *self, int argc, const char *argv[])
+int args_parser(args_t *self, int argc, const char *argv[])
 {
     if (NULL == self || 3 != argc || NULL == argv)
         return -1;
