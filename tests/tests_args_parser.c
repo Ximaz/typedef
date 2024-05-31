@@ -10,8 +10,8 @@
 #include "args_parser.h"
 #include "path.h"
 
-const char *JS_SRC_PATH = "tests/jsdoc_src.js";
-const char *TYPES_FOLDER = "tests/types/";
+static const char *JS_SRC_PATH = "tests/jsdoc_src.js";
+static const char *TYPES_FOLDER = "tests/types/";
 
 TestSuite(args_parser, .description = "Arguments parser unit tests");
 
