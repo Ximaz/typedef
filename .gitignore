@@ -10,3 +10,4 @@ a.out
 .vscode
 .idea
 unit_tests
+tests/types

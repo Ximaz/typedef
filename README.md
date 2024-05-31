@@ -53,7 +53,7 @@ Then you can use the `typedef` program as such :
 ```
 
 where `User.js` is refered to as the `jsdoc_src_path`, and the `typings/` as
-the `output_folder`.
+the `types_folder`.
 
 In this particular example, it will produce the following output :
 
