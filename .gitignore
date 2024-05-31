@@ -1,0 +1,12 @@
+a.out
+*.o
+*.so
+*.a
+*.dylib
+*.gcno
+*.gcda
+*.log
+.env
+.vscode
+.idea
+unit_tests

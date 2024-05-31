@@ -1,0 +1,138 @@
+name: "ci"
+
+on:
+    -   push
+
+env:
+    UNIT_TESTS: "./unit_tests"
+    ARTIFACTS: "typedef"
+    VALGRIND_SUPPRESSIONS: ""
+
+jobs:
+    check-basics:
+        runs-on: "ubuntu-latest"
+        outputs:
+            continue: "${{ steps.basic-check.outputs.continue }}"
+        steps:
+            -   id: "basic-check"
+                continue-on-error: true
+                if: "${{ env.ARTIFACTS }}"
+                run: "echo \"continue=1\" >> $GITHUB_OUTPUT"
+
+    basics:
+        needs:
+            -   "check-basics"
+        runs-on: "ubuntu-latest"
+        if: "${{ needs.check-basics.outputs.continue == '1' }}"
+        container:
+            image: "epitechcontent/epitest-docker:latest"
+        steps:
+            -   name: "Checkout"
+                uses: "actions/checkout@v4.1.1"
+                with:
+                    fetch-depth: 0
+
+            -   name: "Temporary files"
+                run: "[[ $(find . -type f \\( -name '*.o' -o -name '*.log' -o -name '.env' -o -name '*.so' -o -name '*.a' -o -name '*.gcno' -o -name '*.gcda' \\)) == \"\" ]] && exit 0 || exit 1"
+
+            -   name: "Checking for the artifacts before compilation"
+                run: "for a in ${{ env.ARTIFACTS }} ; do [ ! -f \"${a}\" ]; done"
+
+            -   name: "Checking make on it's own"
+                timeout-minutes: 1
+                run: "make && for a in ${{ env.ARTIFACTS }}; do [ -f \"${a}\" ]; done"
+
+            -   name: "Checking for make relink on it's own"
+                timeout-minutes: 1
+                run: "[[ $(make) == \"\" ]] && exit 1 || echo 0"
+
+            -   name: "Checking 'all' rule"
+                timeout-minutes: 1
+                run: "make all && for a in ${{ env.ARTIFACTS }}; do [ -f \"${a}\" ]; done"
+
+            -   name: "Checking for 'all' make relink"
+                timeout-minutes: 1
+                run: "[[ $(make all) == \"\" ]] && exit 1 || echo 0"
+
+            -   name: "Checking 'clean' rule"
+                timeout-minutes: 1
+                run: "make clean && echo $(find . -type d -name '.git' -prune -o \\( -type f \\( -name '*.o' -o -name '.env' -o -name '*.log' -o -name '*.gcno' -o -name '*.gcda' \\) \\) -print) && [[ $(find . -type d -name '.git' -prune -o \\( -type f \\( -name '*.o' -o -name '.env' -o -name '*.log' -o -name '*.gcno' -o -name '*.gcda' \\) \\) -print) == \"\" ]] && exit 0 || exit 1"
+
+            -   name: "Checking 'fclean' rule"
+                timeout-minutes: 1
+                run: |
+                    make
+                    make fclean
+                    for a in ${{ env.ARTIFACTS }}; do [ ! -f "${a}" ]; done
+                    if [[ $(find . -type d -name '.git' -prune -o \( -type f \( -name '*.o' -o -name '*.log' -o -name '.env' -o -name '*.so' -o -name '*.a' -o -name '*.gcno' -o -name '*.gcda' \) \) -print) == "" ]]; then
+                        exit 0
+                    else
+                        exit 1
+                    fi
+
+            -   name: "Checking 're' rule"
+                timeout-minutes: 1
+                run: |
+                    make re
+                    for a in ${{ env.ARTIFACTS }} ; do [ -f "${a}" ]; done
+
+            -   name: "Checking the artifacts rule"
+                timeout-minutes: 1
+                run: |
+                    for a in ${{ env.ARTIFACTS }}; do make "${a}" && [ -f "${a}" ]; done
+
+            -   name: "Checking for the artifacts make relink"
+                timeout-minutes: 1
+                run: |
+                    for a in ${{ env.ARTIFACTS }}; do
+                        if [[ $(make "${a}") == "" ]]; then exit 1; fi;
+                    done
+
+            -   name: "Clean up"
+                run: "make fclean"
+
+    coding-style:
+        runs-on: "ubuntu-latest"
+        container:
+            image: "ghcr.io/epitech/coding-style-checker:latest"
+        steps:
+            -   name: "Check coding style"
+                run: "/usr/local/bin/check.sh $(pwd) $(pwd)"
+
+            -   name: "Annotate coding-style errors"
+                run: |
+                    status=0
+                    while IFS= read -r line; do
+                        file=$(echo "${line}" | cut -d ':' -f1)
+                        pos=$(echo "${line}" | cut -d ':' -f2)
+                        type=$(echo "${line}" | cut -d ':' -f3)
+                        csid=$(echo "${line}" | cut -d ':' -f4)
+
+                        [[ "${type:1}" == "illegal"* ]] && continue
+                        echo "::error file=${file},line=${pos},title=${type:1} ${csid}::${type:1}: ${csid} at ${file}:${pos}"
+                        status=1
+                    done < coding-style-reports.log
+                    exit "${status}"
+
+    run-tests:
+        needs:
+            -   "basics"
+            -   "coding-style"
+        runs-on: "ubuntu-latest"
+        container:
+            image: "epitechcontent/epitest-docker:latest"
+        steps:
+            -   name: "Checkout"
+                uses: "actions/checkout@v4.1.1"
+                with:
+                    fetch-depth: 0
+
+            -   name: "Run tests"
+                timeout-minutes: 1
+                run: "[[ $(grep -E \"^tests_run:\" Makefile) == \"\" ]] && exit 0 || make tests_run"
+
+            -   name: "Run Valgrind"
+                uses: "Ximaz/valgrind-action@v1.2.0"
+                with:
+                    binary_path: "./${{ env.UNIT_TESTS }}"
+                    valgrind_suppressions: "${{ env.VALGRIND_SUPPRESSIONS }}"
