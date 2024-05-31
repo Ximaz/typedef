@@ -7,7 +7,7 @@
 
 #ifndef __PATH_H_
     #define __PATH_H_
-    #include <sys/stat.h>
+    #include <sys/types.h>
 
 int file_exists(const char *path);
 int directory_exists(const char *path);
