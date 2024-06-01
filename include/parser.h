@@ -80,6 +80,7 @@ typedef struct s_property {
     char *name;
     type_t types[MAX_TYPES_UNION];
     int optional;
+    int union_types_nb;
 } property_t;
 
 typedef struct s_typedef {
